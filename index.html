@@ -36,6 +36,7 @@
             --barra: 56px;
         }
         *, *::before, *::after { box-sizing: border-box; }
+        [hidden] { display: none !important; }
         html { scroll-behavior: smooth; }
         body {
             font-family: 'Poppins', system-ui, sans-serif;
@@ -147,14 +148,14 @@
 
         .campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
         .campo label { display: block; margin-bottom: 6px; font-size: 14px; font-weight: 500; color: var(--texto); }
-        .campo input, textarea, .cant {
+        .campo input, textarea, .cant, .form-agregar input {
             width: 100%; height: 44px; padding: 0 12px;
             background: #fff; border: 1px solid var(--borde-campo); border-radius: 8px;
             font-size: 16px; color: var(--texto); outline: none;
             transition: border-color .15s, box-shadow .15s;
         }
         textarea { height: auto; min-height: 88px; padding: 10px 12px; resize: vertical; line-height: 1.5; }
-        .campo input:focus, textarea:focus, .cant:focus { border-color: var(--morado); box-shadow: 0 0 0 3px rgba(124,7,166,.15); }
+        .campo input:focus, textarea:focus, .cant:focus, .form-agregar input:focus { border-color: var(--morado); box-shadow: 0 0 0 3px rgba(124,7,166,.15); }
         ::placeholder { color: var(--gris-marca); }
 
         .categorias { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; align-items: start; }
@@ -177,6 +178,65 @@
         .firmas { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
         .firma { padding-top: 64px; text-align: center; }
         .firma div { border-top: 1px solid var(--texto-2); padding-top: 8px; font-size: 14px; font-weight: 500; color: var(--texto-2); }
+
+        .btn-quitar {
+            display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+            width: 32px; height: 32px; border: 0; border-radius: 8px; background: none; color: var(--gris-marca); cursor: pointer;
+        }
+        .btn-quitar svg.ico { width: 16px; height: 16px; }
+        .btn-quitar:hover { background: #FCEEEE; color: var(--error); }
+        .lista li .btn-quitar { width: 28px; height: 28px; }
+
+        /* Agregar artículo al final de cada categoría. */
+        .agregar { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--borde); }
+        .btn-agregar { margin-left: -6px; }
+        .btn-agregar svg.ico { width: 16px; height: 16px; }
+        .form-agregar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+        .form-agregar input { flex: 1; min-width: 0; height: 36px !important; }
+        .error-agregar { width: 100%; margin: 0; font-size: 12px; color: var(--error); }
+
+        /* Checklists frecuentes. */
+        .tarjeta-cab { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
+        .tarjeta-cab h2 { margin: 0; }
+        .ayuda-texto { margin: 4px 0 14px; font-size: 14px; color: var(--texto-3); }
+        .frecuentes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+        .frecuentes li { display: flex; align-items: center; border: 1px solid var(--borde); border-radius: 10px; background: #fff; transition: border-color .15s, background .15s; }
+        .frecuentes li:not(.vacio):hover { border-color: rgba(124,7,166,.45); background: #FCFAFD; }
+        .frecuente { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 12px; border: 0; border-radius: 10px; background: none; text-align: left; cursor: pointer; }
+        .frecuente:focus-visible { outline: 2px solid var(--turquesa); outline-offset: 2px; }
+        .frecuente-nombre { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: var(--morado); overflow-wrap: anywhere; }
+        .frecuente-meta { font-size: 12px; color: var(--texto-3); }
+        .insignia { padding: 1px 6px; border-radius: 6px; background: #F3EAF8; color: var(--morado); font-size: 11px; font-weight: 500; }
+        .frecuentes .btn-quitar { margin-right: 6px; }
+        .frecuentes li.vacio { grid-column: 1 / -1; gap: 14px; padding: 14px 16px; border-style: dashed; border-color: var(--borde-campo); background: transparent; }
+        .vacio p { margin: 0; }
+        .vacio-t { font-size: 14px; font-weight: 500; }
+        .vacio-s { font-size: 13px; color: var(--texto-3); }
+
+        /* Diálogos. */
+        .dialogo-capa { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(29,27,34,.4); animation: guiaEntra .15s ease-out; }
+        .dialogo { width: min(400px, 100%); background: #fff; border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,.22); overflow: hidden; }
+        .dialogo-cuerpo { padding: 18px 20px 20px; }
+        .dialogo h3 { margin: 0 0 6px; font-size: 18px; font-weight: 600; color: var(--morado); }
+        .dialogo p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--texto-2); }
+        .dialogo .campo { margin-top: 14px; }
+        .dialogo-botones { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+        .btn-destructivo { background: var(--error); color: #fff; }
+        .btn-destructivo:hover { background: #962019; }
+        .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+        /* Avisos: entran desde abajo, encima de la barra de acciones. */
+        .aviso {
+            position: fixed; left: 50%; bottom: calc(80px + env(safe-area-inset-bottom)); z-index: 65; transform: translateX(-50%);
+            display: flex; align-items: center; gap: 10px; width: max-content; max-width: calc(100vw - 32px);
+            padding: 10px 16px; background: #fff; border: 1px solid var(--borde); border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(29,27,34,.15); font-size: 14px; font-weight: 500; pointer-events: none;
+            animation: avisoEntra .2s ease-out;
+        }
+        .aviso svg.ico { color: var(--exito); }
+        .aviso.error { background: #FCEEEE; border-color: #F1CFCC; color: var(--error); }
+        .aviso.error svg.ico { color: var(--error); }
+        @keyframes avisoEntra { from { opacity: 0; transform: translate(-50%, 8px); } }
 
         /* Solo en el reporte impreso. */
         .marca-impresion { display: none; }
@@ -252,6 +312,7 @@
             h1 { font-size: 28px; }
             section { scroll-margin-top: 24px; }
             .barra-acciones { padding: 12px 32px; }
+            .aviso { left: calc(50% + var(--menu) / 2); }
         }
         @media (max-width: 520px) {
             .firmas { grid-template-columns: 1fr; gap: 0; }
@@ -264,7 +325,8 @@
         @media print {
             @page { margin: 10mm; }
             body { background: #fff; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-            .fondo-textura::before, .topbar, .velo, .menu, .barra-acciones, .guia, .contexto { display: none !important; }
+            .fondo-textura::before, .topbar, .velo, .menu, .barra-acciones, .guia, .contexto,
+            #frecuentes, .agregar, .btn-quitar, .aviso, .dialogo-capa { display: none !important; }
             main { margin: 0; }
             .contenido { max-width: none; padding: 0; }
             .encabezado { display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; margin-bottom: 10px; border-bottom: 3px solid transparent; border-image: var(--filete) 1; }
@@ -347,6 +409,15 @@
             </div>
         </div>
 
+        <section id="frecuentes" class="tarjeta" data-guide="frecuentes">
+            <div class="tarjeta-cab">
+                <h2>Checklists frecuentes</h2>
+                <button class="btn btn-contorno btn-sm" id="btnGuardarFrecuente" data-guide="guardar-frecuente"><span data-icono="guardar"></span>Guardar la hoja actual</button>
+            </div>
+            <p class="ayuda-texto">Guarda los artículos que llevas seguido y cárgalos con un toque.</p>
+            <ul class="frecuentes" id="listaFrecuentes"></ul>
+        </section>
+
         <section id="datos" class="tarjeta" data-guide="datos">
             <h2>Datos del servicio</h2>
             <div class="campos">
@@ -394,7 +465,13 @@
         rayo: '<path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>',
         brocha: '<path d="m11 10 3 3"/><path d="M6.5 21A3.5 3.5 0 1 0 3 17.5a2.62 2.62 0 0 1-.708 1.792A1 1 0 0 0 3 21z"/><path d="M9.969 17.031 21.378 5.624a1 1 0 0 0-3.002-3.002L6.967 14.031"/>',
         casco: '<path d="M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5"/><path d="M14 6a6 6 0 0 1 6 6v3"/><path d="M4 15v-3a6 6 0 0 1 6-6"/><rect x="2" y="15" width="20" height="4" rx="1"/>',
-        firma: '<path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/>'
+        firma: '<path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/>',
+        frecuente: '<path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>',
+        guardar: '<path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/><path d="M12 7v6M9 10h6"/>',
+        mas: '<path d="M5 12h14M12 5v14"/>',
+        borrar: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
+        listo: '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+        alerta: '<circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>'
     };
     const icono = (n) => `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONOS[n]}</svg>`;
     document.querySelectorAll('[data-icono]').forEach(el => { el.innerHTML = icono(el.dataset.icono); });
@@ -407,19 +484,49 @@
         { id: 'epp', nombre: 'EPP y alturas', icono: 'casco', items: ['Casco con barbiquejo', 'Lentes de protección', 'Guantes de trabajo', 'Chaleco reflejante', 'Rodilleras', 'Arnés / línea de vida', 'Escalera chica', 'Escalera mediana', 'Escalera grande'] }
     ];
 
+    // ---------- Almacenamiento (en este dispositivo; localStorage puede fallar en modo privado) ----------
+    const pref = {
+        leer(k) { try { return localStorage.getItem(k); } catch { return null; } },
+        guardar(k, v) { try { localStorage.setItem(k, v); } catch { /* sin almacenamiento */ } },
+        leerJSON(k, def) { try { return JSON.parse(this.leer(k)) ?? def; } catch { return def; } },
+        guardarJSON(k, v) { this.guardar(k, JSON.stringify(v)); }
+    };
+    const CLAVE_PROPIOS = 'checklist.articulos';    // { categoria: [{ id, nombre }] }
+    const CLAVE_FRECUENTES = 'checklist.frecuentes'; // [{ id, nombre, items: { articulo: cantidad }, extras, usos, ultimoUso }]
+
+    const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const clave = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const nuevoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
     // ---------- Hoja de control ----------
+    const propios = pref.leerJSON(CLAVE_PROPIOS, {});
+
+    function filaArticulo(catId, nombre, id, propio) {
+        return `<li data-id="${esc(id)}"${propio ? ' class="propio"' : ''}>
+            <input type="text" inputmode="numeric" class="cant" placeholder="0" maxlength="3" aria-label="Cantidad de ${esc(nombre)}">
+            <label><input type="checkbox"><span>${esc(nombre)}</span></label>
+            ${propio ? `<button type="button" class="btn-quitar" data-quitar title="Quitar de la lista" aria-label="Quitar ${esc(nombre)} de la lista">${icono('x')}</button>` : ''}</li>`;
+    }
+
     document.getElementById('categorias').innerHTML = CATEGORIAS.map((c, n) => `
         <section id="${c.id}" class="tarjeta categoria"${n === 0 ? ' data-guide="categoria"' : ''}>
-            <h2>${icono(c.icono)}${n + 1}. ${c.nombre}<span class="contador"${n === 0 ? ' data-guide="contador"' : ''}>0/${c.items.length}</span></h2>
-            <ul class="lista">${c.items.map((item, k) => `
-                <li><input type="text" inputmode="numeric" class="cant" placeholder="0" maxlength="3" aria-label="Cantidad de ${item}">
-                    <label><input type="checkbox" id="${c.id}-${k}">${item}</label></li>`).join('')}
-            </ul>
+            <h2>${icono(c.icono)}${n + 1}. ${c.nombre}<span class="contador"${n === 0 ? ' data-guide="contador"' : ''}></span></h2>
+            <ul class="lista">${c.items.map(item => filaArticulo(c.id, item, `${c.id}:${clave(item)}`, false)).join('')}${(propios[c.id] || []).map(a => filaArticulo(c.id, a.nombre, a.id, true)).join('')}</ul>
+            <div class="agregar">
+                <button type="button" class="btn btn-fantasma btn-sm btn-agregar"${n === 0 ? ' data-guide="agregar"' : ''}>${icono('mas')}Agregar artículo</button>
+                <form class="form-agregar" hidden>
+                    <input type="text" maxlength="60" placeholder="Nombre del artículo" aria-label="Nombre del artículo nuevo en ${c.nombre}">
+                    <button class="btn btn-primario btn-sm">Agregar</button>
+                    <button type="button" class="btn-quitar" data-cancelar aria-label="Cancelar">${icono('x')}</button>
+                    <p class="error-agregar" hidden></p>
+                </form>
+            </div>
         </section>`).join('');
 
     const SECCIONES = [
+        { id: 'frecuentes', nombre: 'Checklists frecuentes', icono: 'frecuente' },
         { id: 'datos', nombre: 'Datos del servicio', icono: 'datos' },
-        ...CATEGORIAS.map(c => ({ id: c.id, nombre: c.nombre, icono: c.icono, total: c.items.length })),
+        ...CATEGORIAS.map(c => ({ id: c.id, nombre: c.nombre, icono: c.icono, total: true })),
         { id: 'notas', nombre: 'Extras y firmas', icono: 'firma' }
     ];
     const nav = document.getElementById('navSecciones');
@@ -461,22 +568,215 @@
         actualizarAvance();
     }
 
-    document.querySelectorAll('.lista li').forEach(li => {
-        const checkbox = li.querySelector('input[type="checkbox"]');
-        const cant = li.querySelector('.cant');
-
-        checkbox.addEventListener('change', () => { marcar(li, checkbox.checked); actualizarAvance(); });
-
+    // Eventos delegados: sirven igual para los artículos que se agregan después.
+    const contCategorias = document.getElementById('categorias');
+    contCategorias.addEventListener('change', e => {
+        if (e.target.type !== 'checkbox') return;
+        marcar(e.target.closest('li'), e.target.checked);
+        actualizarAvance();
+    });
+    contCategorias.addEventListener('input', e => {
+        if (!e.target.classList.contains('cant')) return;
         // Solo números: se quitan las letras al escribir o pegar.
-        cant.addEventListener('input', () => {
-            cant.value = cant.value.replace(/\D/g, '');
-            const activo = parseInt(cant.value) > 0;
-            checkbox.checked = activo;
-            li.classList.toggle('selected', activo);
+        const cant = e.target, li = cant.closest('li');
+        cant.value = cant.value.replace(/\D/g, '');
+        const activo = parseInt(cant.value) > 0;
+        li.querySelector('input[type="checkbox"]').checked = activo;
+        li.classList.toggle('selected', activo);
+        actualizarAvance();
+    });
+
+    // ---------- Agregar y quitar artículos propios ----------
+    function mostrarFormAgregar(sec, visible) {
+        const form = sec.querySelector('.form-agregar');
+        form.hidden = !visible;
+        sec.querySelector('.btn-agregar').hidden = visible;
+        form.querySelector('.error-agregar').hidden = true;
+        if (visible) { form.querySelector('input').value = ''; form.querySelector('input').focus(); }
+        else sec.querySelector('.btn-agregar').focus();
+    }
+    contCategorias.addEventListener('click', async e => {
+        const sec = e.target.closest('.categoria');
+        if (e.target.closest('.btn-agregar')) mostrarFormAgregar(sec, true);
+        else if (e.target.closest('[data-cancelar]')) mostrarFormAgregar(sec, false);
+        else if (e.target.closest('[data-quitar]')) {
+            const li = e.target.closest('li'), nombre = li.querySelector('label span').textContent;
+            const ok = await dialogo({
+                titulo: 'Quitar artículo',
+                texto: `«${nombre}» se quita de la lista de ${CATEGORIAS.find(c => c.id === sec.id).nombre}. Puedes volver a agregarlo cuando quieras.`,
+                aceptar: 'Quitar', destructivo: true
+            });
+            if (!ok) return;
+            propios[sec.id] = (propios[sec.id] || []).filter(a => a.id !== li.dataset.id);
+            pref.guardarJSON(CLAVE_PROPIOS, propios);
+            li.remove();
             actualizarAvance();
-        });
+            aviso(`Se quitó «${nombre}».`);
+        }
+    });
+    contCategorias.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && e.target.closest('.form-agregar')) { e.stopPropagation(); mostrarFormAgregar(e.target.closest('.categoria'), false); }
+    });
+    contCategorias.addEventListener('submit', e => {
+        e.preventDefault();
+        const form = e.target, sec = form.closest('.categoria'), error = form.querySelector('.error-agregar');
+        const nombre = form.querySelector('input').value.trim().replace(/\s+/g, ' ');
+        if (!nombre) { error.textContent = 'Escribe el nombre del artículo.'; error.hidden = false; return; }
+        const repetido = [...sec.querySelectorAll('.lista label span')].some(s => clave(s.textContent) === clave(nombre));
+        if (repetido) { error.textContent = 'Ese artículo ya está en esta lista.'; error.hidden = false; return; }
+        const id = `${sec.id}:p-${nuevoId()}`;
+        (propios[sec.id] = propios[sec.id] || []).push({ id, nombre });
+        pref.guardarJSON(CLAVE_PROPIOS, propios);
+        sec.querySelector('.lista').insertAdjacentHTML('beforeend', filaArticulo(sec.id, nombre, id, true));
+        // Lo nuevo casi siempre es algo que vas a llevar: entra marcado con cantidad 1.
+        marcar(sec.querySelector('.lista li:last-child'), true);
+        actualizarAvance();
+        form.querySelector('input').value = '';
+        error.hidden = true;
+        form.querySelector('input').focus();
+        aviso(`Se agregó «${nombre}» a ${CATEGORIAS.find(c => c.id === sec.id).nombre}.`);
     });
     actualizarAvance();
+
+    // ---------- Avisos y diálogos ----------
+    let avisoActual = null;
+    function aviso(texto, tipo = 'listo') {
+        if (avisoActual) avisoActual.remove();
+        const el = document.createElement('div');
+        el.className = `aviso${tipo === 'error' ? ' error' : ''}`;
+        el.setAttribute('role', 'status');
+        el.innerHTML = `${icono(tipo === 'error' ? 'alerta' : 'listo')}<span>${esc(texto)}</span>`;
+        document.body.appendChild(el);
+        avisoActual = el;
+        setTimeout(() => { if (avisoActual === el) { el.remove(); avisoActual = null; } }, 3200);
+    }
+
+    // Devuelve el texto del campo (si lo hay), true al aceptar o null al cancelar.
+    function dialogo({ titulo, texto, campo, aceptar = 'Aceptar', destructivo = false }) {
+        return new Promise(resolve => {
+            const antes = document.activeElement;
+            const capa = document.createElement('div');
+            capa.className = 'dialogo-capa';
+            capa.innerHTML = `
+                <form class="dialogo" role="dialog" aria-modal="true" aria-labelledby="dlgTitulo">
+                    <div class="guia-filete"></div>
+                    <div class="dialogo-cuerpo">
+                        <h3 id="dlgTitulo">${esc(titulo)}</h3>
+                        ${texto ? `<p>${esc(texto)}</p>` : ''}
+                        ${campo ? `<div class="campo"><label for="dlgCampo">${esc(campo.etiqueta)}</label>
+                            <input id="dlgCampo" type="text" maxlength="60" value="${esc(campo.valor || '')}" placeholder="${esc(campo.placeholder || '')}" autocomplete="off"></div>` : ''}
+                        <div class="dialogo-botones">
+                            <button type="button" class="btn btn-contorno" data-no>Cancelar</button>
+                            <button class="btn ${destructivo ? 'btn-destructivo' : 'btn-primario'}" data-si>${esc(aceptar)}</button>
+                        </div>
+                    </div>
+                </form>`;
+            document.body.appendChild(capa);
+            const form = capa.querySelector('form'), input = capa.querySelector('#dlgCampo'), si = capa.querySelector('[data-si]');
+            const cerrar = (valor) => { capa.remove(); document.removeEventListener('keydown', teclas, true); if (antes && antes.focus) antes.focus(); resolve(valor); };
+            const teclas = (e) => { if (e.key === 'Escape') { e.stopPropagation(); cerrar(null); } };
+            document.addEventListener('keydown', teclas, true);
+            capa.addEventListener('click', e => { if (e.target === capa) cerrar(null); });
+            capa.querySelector('[data-no]').onclick = () => cerrar(null);
+            if (input) {
+                const revisar = () => { si.disabled = !input.value.trim(); };
+                input.addEventListener('input', revisar); revisar();
+                input.focus(); input.select();
+            } else si.focus();
+            form.onsubmit = (e) => { e.preventDefault(); if (input && !input.value.trim()) return; cerrar(input ? input.value.trim().replace(/\s+/g, ' ') : true); };
+        });
+    }
+
+    // ---------- Checklists frecuentes ----------
+    let frecuentes = pref.leerJSON(CLAVE_FRECUENTES, []);
+    const listaFrecuentes = document.getElementById('listaFrecuentes');
+    const campoExtras = document.getElementById('extras');
+
+    function pintarFrecuentes() {
+        // Las más usadas primero; a igual uso, la más reciente.
+        frecuentes.sort((a, b) => (b.usos - a.usos) || (b.ultimoUso - a.ultimoUso));
+        if (!frecuentes.length) {
+            listaFrecuentes.innerHTML = `<li class="vacio"><img src="icons/hoja.svg?v=2" width="40" height="40" alt="">
+                <div><p class="vacio-t">Aquí no hay nada todavía</p>
+                <p class="vacio-s">Marca los artículos de una instalación típica y toca «Guardar la hoja actual».</p></div></li>`;
+            return;
+        }
+        listaFrecuentes.innerHTML = frecuentes.map((f, n) => {
+            const total = Object.keys(f.items).length;
+            const uso = f.usos ? `usada ${f.usos} ${f.usos === 1 ? 'vez' : 'veces'}` : 'sin usar';
+            return `<li${n === 0 ? ' data-guide="frecuente"' : ''}>
+                <button type="button" class="frecuente" data-cargar="${f.id}" title="Cargar esta checklist">
+                    <span class="frecuente-nombre">${esc(f.nombre)}${n === 0 && f.usos > 1 ? '<span class="insignia">Más usada</span>' : ''}</span>
+                    <span class="frecuente-meta">${total} ${total === 1 ? 'artículo' : 'artículos'} · ${uso}</span>
+                </button>
+                <button type="button" class="btn-quitar" data-borrar="${f.id}" title="Borrar" aria-label="Borrar la checklist ${esc(f.nombre)}">${icono('borrar')}</button></li>`;
+        }).join('');
+    }
+
+    function hojaActual() {
+        const items = {};
+        document.querySelectorAll('.lista li.selected').forEach(li => { items[li.dataset.id] = parseInt(li.querySelector('.cant').value) || 1; });
+        return items;
+    }
+
+    async function guardarFrecuente() {
+        const items = hojaActual(), total = Object.keys(items).length;
+        if (!total) { aviso('Marca al menos un artículo para guardar la checklist.', 'error'); return; }
+        const extras = campoExtras.value.trim();
+        const nombre = await dialogo({
+            titulo: 'Guardar como checklist frecuente',
+            texto: `Se guardan los ${total} artículos marcados con sus cantidades${extras ? ' y los artículos extra' : ''}. Si ya tienes una con el mismo nombre, se actualiza.`,
+            campo: { etiqueta: 'Nombre', valor: document.getElementById('proyecto').value.trim(), placeholder: 'Ej. Vinil en muro, señalética en altura' },
+            aceptar: 'Guardar'
+        });
+        if (!nombre) return;
+        const previa = frecuentes.find(f => f.nombre.toLowerCase() === nombre.toLowerCase());
+        if (previa) Object.assign(previa, { nombre, items, extras, ultimoUso: Date.now() });
+        else frecuentes.push({ id: nuevoId(), nombre, items, extras, usos: 0, ultimoUso: Date.now() });
+        pref.guardarJSON(CLAVE_FRECUENTES, frecuentes);
+        pintarFrecuentes();
+        aviso(previa ? `Se actualizó «${nombre}».` : `Se guardó «${nombre}».`);
+    }
+
+    async function cargarFrecuente(id) {
+        const f = frecuentes.find(x => x.id === id);
+        if (!f) return;
+        if (document.querySelector('.lista li.selected') || (f.extras && campoExtras.value.trim())) {
+            const ok = await dialogo({ titulo: `Cargar «${f.nombre}»`, texto: 'Los artículos marcados ahora se reemplazan por los de esta checklist.', aceptar: 'Cargar' });
+            if (!ok) return;
+        }
+        deseleccionarTodo();
+        let faltan = 0;
+        for (const [articulo, cantidad] of Object.entries(f.items)) {
+            const li = contCategorias.querySelector(`li[data-id="${CSS.escape(articulo)}"]`);
+            if (!li) { faltan++; continue; }
+            marcar(li, true);
+            li.querySelector('.cant').value = String(cantidad);
+        }
+        if (f.extras) campoExtras.value = f.extras;
+        f.usos = (f.usos || 0) + 1;
+        f.ultimoUso = Date.now();
+        pref.guardarJSON(CLAVE_FRECUENTES, frecuentes);
+        pintarFrecuentes();
+        actualizarAvance();
+        aviso(`Se cargó «${f.nombre}»${faltan ? ` (${faltan} ${faltan === 1 ? 'artículo ya no está' : 'artículos ya no están'} en la lista)` : ''}.`);
+    }
+
+    listaFrecuentes.addEventListener('click', async e => {
+        const cargar = e.target.closest('[data-cargar]'), borrar = e.target.closest('[data-borrar]');
+        if (cargar) cargarFrecuente(cargar.dataset.cargar);
+        if (borrar) {
+            const f = frecuentes.find(x => x.id === borrar.dataset.borrar);
+            const ok = await dialogo({ titulo: 'Borrar checklist', texto: `«${f.nombre}» se borra de tus checklists frecuentes. La hoja actual no cambia.`, aceptar: 'Borrar', destructivo: true });
+            if (!ok) return;
+            frecuentes = frecuentes.filter(x => x !== f);
+            pref.guardarJSON(CLAVE_FRECUENTES, frecuentes);
+            pintarFrecuentes();
+            aviso(`Se borró «${f.nombre}».`);
+        }
+    });
+    document.getElementById('btnGuardarFrecuente').addEventListener('click', guardarFrecuente);
+    pintarFrecuentes();
 
     // ---------- Menú ----------
     const menu = document.getElementById('menu');
@@ -521,11 +821,7 @@
     window.addEventListener('resize', marcarSeccion);
     marcarSeccion();
 
-    // ---------- Preferencias (localStorage puede fallar en modo privado) ----------
-    const pref = {
-        leer(k) { try { return localStorage.getItem(k); } catch { return null; } },
-        guardar(k, v) { try { localStorage.setItem(k, v); } catch { /* sin almacenamiento */ } }
-    };
+    // ---------- Asistente: encendido o apagado ----------
     const CLAVE_ASISTENTE = 'checklist.asistente';
     const btnAsistente = document.getElementById('btnAsistente');
     const asistenteActivo = () => pref.leer(CLAVE_ASISTENTE) !== 'off';
@@ -578,6 +874,15 @@
         },
         { t: 'menu-pie', m: true, titulo: 'Avance', texto: 'Te dice cuántos artículos llevas marcados en total. El punto se pone turquesa cuando empiezas y verde cuando marcaste todo.' },
         { t: 'ayuda', titulo: 'Botón de ayuda', texto: 'Si tienes dudas, toca el ? para volver a ver esta guía en cualquier momento.' },
+        {
+            t: 'frecuentes', titulo: 'Checklists frecuentes', texto: 'Si haces seguido el mismo tipo de instalación, no tienes que marcar todo cada vez:',
+            lista: [
+                ['Guardar la hoja actual', 'guarda los artículos marcados, sus cantidades y los extras con el nombre que elijas.'],
+                ['Tocar una checklist', 'la carga en la hoja. Las que más usas aparecen primero.'],
+                ['Bote de basura', 'la borra de la lista; la hoja actual no cambia.']
+            ],
+            nota: 'Se guardan en este dispositivo y en este navegador.'
+        },
         { t: 'datos', titulo: 'Datos del servicio', texto: 'Escribe quién es el responsable, la fecha, el proyecto y la ubicación de la instalación. Estos datos salen arriba en el reporte impreso.' },
         {
             t: 'categoria', titulo: 'Equipo y materiales', texto: 'Cada tarjeta agrupa lo que se necesita para una parte del trabajo. En cada renglón:',
@@ -588,7 +893,11 @@
             nota: 'Puedes tocar el nombre del artículo para marcarlo o desmarcarlo.'
         },
         { t: 'contador', titulo: 'Contador de la categoría', texto: 'Te dice cuántos artículos de esta tarjeta llevas marcados. Se pone en verde cuando la completas.' },
-        { t: 'notas', titulo: 'Artículos extra o especiales', texto: 'Anota aquí todo lo que vayas a llevar y no esté en la lista, por ejemplo material específico del proyecto.' },
+        {
+            t: 'agregar', titulo: 'Agregar artículos', texto: '¿Falta algo en la lista? Toca «Agregar artículo», escribe el nombre y pulsa Agregar. Entra marcado con cantidad 1 y se queda en la lista para las siguientes veces.',
+            nota: 'Los artículos que agregas llevan una × para quitarlos de la lista cuando ya no los necesites.'
+        },
+        { t: 'notas', titulo: 'Artículos extra o especiales', texto: 'Anota aquí lo que vayas a llevar solo esta vez, por ejemplo material específico del proyecto. Si es algo que llevas seguido, mejor agrégalo a su categoría.' },
         { t: 'firmas', titulo: 'Firmas', texto: 'En el reporte impreso, el responsable y quien autoriza firman en estas líneas para confirmar lo que salió.' },
         {
             t: 'acciones', titulo: 'Acciones', texto: 'Estos botones están siempre a la mano:',

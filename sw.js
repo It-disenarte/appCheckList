@@ -1,5 +1,5 @@
 // Sube la versión cada vez que cambie el diseño o un archivo, para que los teléfonos descarguen lo nuevo.
-const CACHE = 'checklist-v1';
+const CACHE = 'checklist-v2';
 const SHELL = [
   './', './index.html', './manifest.webmanifest',
   './favicon.ico', './favicon.svg', './icons/hoja.svg', './icons/hoja-blanca.svg',
