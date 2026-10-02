@@ -1,8 +1,13 @@
-# Checklist de Instalaciones — Diseñarte México. App estática servida con nginx.
-FROM nginx:1.27-alpine
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY index.html manifest.webmanifest sw.js favicon.ico favicon.svg /usr/share/nginx/html/
-COPY fonts /usr/share/nginx/html/fonts
-COPY icons /usr/share/nginx/html/icons
-COPY img /usr/share/nginx/html/img
-EXPOSE 80
+# Checklist de Instalaciones — Diseñarte México. Node sirve la app y la API (Postgres).
+FROM node:22-alpine
+WORKDIR /app
+ENV NODE_ENV=production PORT=3000
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+COPY server.js index.html manifest.webmanifest sw.js favicon.ico favicon.svg ./
+COPY fonts ./fonts
+COPY icons ./icons
+COPY img ./img
+EXPOSE 3000
+USER node
+CMD ["node", "server.js"]

@@ -389,6 +389,7 @@
     <div class="menu-pie" data-guide="menu-pie">
         <p class="pie-titulo">Avance</p>
         <p class="pie-estado"><span class="punto" id="puntoAvance"></span><span id="textoAvance">0 artículos marcados</span></p>
+        <p class="pie-estado" data-guide="sync"><span class="punto" id="puntoSync"></span><span id="textoSync">Conectando…</span></p>
         <p class="web">www.disenartemx.com</p>
     </div>
 </aside>
@@ -414,7 +415,7 @@
                 <h2>Checklists frecuentes</h2>
                 <button class="btn btn-contorno btn-sm" id="btnGuardarFrecuente" data-guide="guardar-frecuente"><span data-icono="guardar"></span>Guardar la hoja actual</button>
             </div>
-            <p class="ayuda-texto">Guarda los artículos que llevas seguido y cárgalos con un toque.</p>
+            <p class="ayuda-texto">Guarda los artículos que llevas seguido y cárgalos con un toque. Se comparten con todo el equipo.</p>
             <ul class="frecuentes" id="listaFrecuentes"></ul>
         </section>
 
@@ -491,15 +492,35 @@
         leerJSON(k, def) { try { return JSON.parse(this.leer(k)) ?? def; } catch { return def; } },
         guardarJSON(k, v) { this.guardar(k, JSON.stringify(v)); }
     };
-    const CLAVE_PROPIOS = 'checklist.articulos';    // { categoria: [{ id, nombre }] }
-    const CLAVE_FRECUENTES = 'checklist.frecuentes'; // [{ id, nombre, items: { articulo: cantidad }, extras, usos, ultimoUso }]
+    // Los artículos agregados y las checklists frecuentes se comparten con todo el equipo (servidor + Postgres).
+    // Aquí se guarda la última copia y los cambios que faltan por subir, para que funcione sin internet.
+    const CLAVE_DATOS = 'checklist.datos';           // { articulos: [{ id, categoria, nombre }], frecuentes: [{ id, nombre, items, extras, usos, ultimoUso }] }
+    const CLAVE_PENDIENTES = 'checklist.pendientes'; // [{ metodo, ruta, cuerpo }]
 
     const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const clave = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     const nuevoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
     // ---------- Hoja de control ----------
-    const propios = pref.leerJSON(CLAVE_PROPIOS, {});
+    let estado = pref.leerJSON(CLAVE_DATOS, null) || { articulos: [], frecuentes: [] };
+    let pendientes = pref.leerJSON(CLAVE_PENDIENTES, []);
+    const guardarLocal = () => { pref.guardarJSON(CLAVE_DATOS, estado); pref.guardarJSON(CLAVE_PENDIENTES, pendientes); };
+
+    // Versión anterior (solo en el dispositivo): lo que ya se había guardado se sube para compartirlo.
+    (() => {
+        const viejos = pref.leerJSON('checklist.articulos', null), viejas = pref.leerJSON('checklist.frecuentes', null);
+        if (!viejos && !viejas) return;
+        for (const [categoria, lista] of Object.entries(viejos || {})) for (const a of lista) {
+            estado.articulos.push({ id: a.id, categoria, nombre: a.nombre });
+            pendientes.push({ metodo: 'POST', ruta: '/api/articulos', cuerpo: { id: a.id, categoria, nombre: a.nombre } });
+        }
+        for (const f of viejas || []) {
+            estado.frecuentes.push(f);
+            pendientes.push({ metodo: 'PUT', ruta: `/api/frecuentes/${f.id}`, cuerpo: { nombre: f.nombre, items: f.items, extras: f.extras || '', usos: f.usos || 0 } });
+        }
+        guardarLocal();
+        try { localStorage.removeItem('checklist.articulos'); localStorage.removeItem('checklist.frecuentes'); } catch { /* sin almacenamiento */ }
+    })();
 
     function filaArticulo(catId, nombre, id, propio) {
         return `<li data-id="${esc(id)}"${propio ? ' class="propio"' : ''}>
@@ -511,7 +532,7 @@
     document.getElementById('categorias').innerHTML = CATEGORIAS.map((c, n) => `
         <section id="${c.id}" class="tarjeta categoria"${n === 0 ? ' data-guide="categoria"' : ''}>
             <h2>${icono(c.icono)}${n + 1}. ${c.nombre}<span class="contador"${n === 0 ? ' data-guide="contador"' : ''}></span></h2>
-            <ul class="lista">${c.items.map(item => filaArticulo(c.id, item, `${c.id}:${clave(item)}`, false)).join('')}${(propios[c.id] || []).map(a => filaArticulo(c.id, a.nombre, a.id, true)).join('')}</ul>
+            <ul class="lista">${c.items.map(item => filaArticulo(c.id, item, `${c.id}:${clave(item)}`, false)).join('')}</ul>
             <div class="agregar">
                 <button type="button" class="btn btn-fantasma btn-sm btn-agregar"${n === 0 ? ' data-guide="agregar"' : ''}>${icono('mas')}Agregar artículo</button>
                 <form class="form-agregar" hidden>
@@ -607,8 +628,8 @@
                 aceptar: 'Quitar', destructivo: true
             });
             if (!ok) return;
-            propios[sec.id] = (propios[sec.id] || []).filter(a => a.id !== li.dataset.id);
-            pref.guardarJSON(CLAVE_PROPIOS, propios);
+            estado.articulos = estado.articulos.filter(a => a.id !== li.dataset.id);
+            encolar({ metodo: 'DELETE', ruta: '/api/articulos/' + encodeURIComponent(li.dataset.id) });
             li.remove();
             actualizarAvance();
             aviso(`Se quitó «${nombre}».`);
@@ -625,8 +646,8 @@
         const repetido = [...sec.querySelectorAll('.lista label span')].some(s => clave(s.textContent) === clave(nombre));
         if (repetido) { error.textContent = 'Ese artículo ya está en esta lista.'; error.hidden = false; return; }
         const id = `${sec.id}:p-${nuevoId()}`;
-        (propios[sec.id] = propios[sec.id] || []).push({ id, nombre });
-        pref.guardarJSON(CLAVE_PROPIOS, propios);
+        estado.articulos.push({ id, categoria: sec.id, nombre });
+        encolar({ metodo: 'POST', ruta: '/api/articulos', cuerpo: { id, categoria: sec.id, nombre } });
         sec.querySelector('.lista').insertAdjacentHTML('beforeend', filaArticulo(sec.id, nombre, id, true));
         // Lo nuevo casi siempre es algo que vas a llevar: entra marcado con cantidad 1.
         marcar(sec.querySelector('.lista li:last-child'), true);
@@ -688,13 +709,12 @@
     }
 
     // ---------- Checklists frecuentes ----------
-    let frecuentes = pref.leerJSON(CLAVE_FRECUENTES, []);
     const listaFrecuentes = document.getElementById('listaFrecuentes');
     const campoExtras = document.getElementById('extras');
 
     function pintarFrecuentes() {
         // Las más usadas primero; a igual uso, la más reciente.
-        frecuentes.sort((a, b) => (b.usos - a.usos) || (b.ultimoUso - a.ultimoUso));
+        const frecuentes = [...estado.frecuentes].sort((a, b) => (b.usos - a.usos) || (b.ultimoUso - a.ultimoUso));
         if (!frecuentes.length) {
             listaFrecuentes.innerHTML = `<li class="vacio"><img src="icons/hoja.svg?v=2" width="40" height="40" alt="">
                 <div><p class="vacio-t">Aquí no hay nada todavía</p>
@@ -705,12 +725,35 @@
             const total = Object.keys(f.items).length;
             const uso = f.usos ? `usada ${f.usos} ${f.usos === 1 ? 'vez' : 'veces'}` : 'sin usar';
             return `<li${n === 0 ? ' data-guide="frecuente"' : ''}>
-                <button type="button" class="frecuente" data-cargar="${f.id}" title="Cargar esta checklist">
+                <button type="button" class="frecuente" data-cargar="${esc(f.id)}" title="Cargar esta checklist">
                     <span class="frecuente-nombre">${esc(f.nombre)}${n === 0 && f.usos > 1 ? '<span class="insignia">Más usada</span>' : ''}</span>
                     <span class="frecuente-meta">${total} ${total === 1 ? 'artículo' : 'artículos'} · ${uso}</span>
                 </button>
-                <button type="button" class="btn-quitar" data-borrar="${f.id}" title="Borrar" aria-label="Borrar la checklist ${esc(f.nombre)}">${icono('borrar')}</button></li>`;
+                <button type="button" class="btn-quitar" data-borrar="${esc(f.id)}" title="Borrar" aria-label="Borrar la checklist ${esc(f.nombre)}">${icono('borrar')}</button></li>`;
         }).join('');
+    }
+
+    // Artículos agregados por el equipo: quita los que ya no están y agrega los nuevos sin tocar lo marcado.
+    function pintarPropios() {
+        for (const sec of contCategorias.querySelectorAll('.categoria')) {
+            const lista = sec.querySelector('.lista');
+            const deseados = estado.articulos.filter(a => a.categoria === sec.id);
+            const ids = new Set(deseados.map(a => a.id));
+            // Si otra persona agregó el mismo artículo antes, el servidor se queda con el suyo: se conserva la marca.
+            const marcas = {};
+            for (const li of lista.querySelectorAll('li.propio')) {
+                if (ids.has(li.dataset.id)) continue;
+                if (li.classList.contains('selected')) marcas[clave(li.querySelector('label span').textContent)] = li.querySelector('.cant').value;
+                li.remove();
+            }
+            for (const a of deseados) {
+                if (lista.querySelector(`li[data-id="${CSS.escape(a.id)}"]`)) continue;
+                lista.insertAdjacentHTML('beforeend', filaArticulo(sec.id, a.nombre, a.id, true));
+                const cant = marcas[clave(a.nombre)];
+                if (cant !== undefined) { const li = lista.lastElementChild; marcar(li, true); li.querySelector('.cant').value = cant; }
+            }
+        }
+        actualizarAvance();
     }
 
     function hojaActual() {
@@ -725,21 +768,22 @@
         const extras = campoExtras.value.trim();
         const nombre = await dialogo({
             titulo: 'Guardar como checklist frecuente',
-            texto: `Se guardan los ${total} artículos marcados con sus cantidades${extras ? ' y los artículos extra' : ''}. Si ya tienes una con el mismo nombre, se actualiza.`,
+            texto: `Se guardan los ${total} artículos marcados con sus cantidades${extras ? ' y los artículos extra' : ''}, y la verá todo el equipo. Si ya hay una con el mismo nombre, se actualiza.`,
             campo: { etiqueta: 'Nombre', valor: document.getElementById('proyecto').value.trim(), placeholder: 'Ej. Vinil en muro, señalética en altura' },
             aceptar: 'Guardar'
         });
         if (!nombre) return;
-        const previa = frecuentes.find(f => f.nombre.toLowerCase() === nombre.toLowerCase());
-        if (previa) Object.assign(previa, { nombre, items, extras, ultimoUso: Date.now() });
-        else frecuentes.push({ id: nuevoId(), nombre, items, extras, usos: 0, ultimoUso: Date.now() });
-        pref.guardarJSON(CLAVE_FRECUENTES, frecuentes);
+        let f = estado.frecuentes.find(x => x.nombre.toLowerCase() === nombre.toLowerCase());
+        const nueva = !f;
+        if (f) Object.assign(f, { nombre, items, extras, ultimoUso: Date.now() });
+        else estado.frecuentes.push(f = { id: nuevoId(), nombre, items, extras, usos: 0, ultimoUso: Date.now() });
+        encolar({ metodo: 'PUT', ruta: `/api/frecuentes/${f.id}`, cuerpo: { nombre, items, extras } });
         pintarFrecuentes();
-        aviso(previa ? `Se actualizó «${nombre}».` : `Se guardó «${nombre}».`);
+        aviso(nueva ? `Se guardó «${nombre}».` : `Se actualizó «${nombre}».`);
     }
 
     async function cargarFrecuente(id) {
-        const f = frecuentes.find(x => x.id === id);
+        const f = estado.frecuentes.find(x => x.id === id);
         if (!f) return;
         if (document.querySelector('.lista li.selected') || (f.extras && campoExtras.value.trim())) {
             const ok = await dialogo({ titulo: `Cargar «${f.nombre}»`, texto: 'Los artículos marcados ahora se reemplazan por los de esta checklist.', aceptar: 'Cargar' });
@@ -756,7 +800,7 @@
         if (f.extras) campoExtras.value = f.extras;
         f.usos = (f.usos || 0) + 1;
         f.ultimoUso = Date.now();
-        pref.guardarJSON(CLAVE_FRECUENTES, frecuentes);
+        encolar({ metodo: 'POST', ruta: `/api/frecuentes/${f.id}/uso` });
         pintarFrecuentes();
         actualizarAvance();
         aviso(`Se cargó «${f.nombre}»${faltan ? ` (${faltan} ${faltan === 1 ? 'artículo ya no está' : 'artículos ya no están'} en la lista)` : ''}.`);
@@ -766,17 +810,94 @@
         const cargar = e.target.closest('[data-cargar]'), borrar = e.target.closest('[data-borrar]');
         if (cargar) cargarFrecuente(cargar.dataset.cargar);
         if (borrar) {
-            const f = frecuentes.find(x => x.id === borrar.dataset.borrar);
-            const ok = await dialogo({ titulo: 'Borrar checklist', texto: `«${f.nombre}» se borra de tus checklists frecuentes. La hoja actual no cambia.`, aceptar: 'Borrar', destructivo: true });
+            const f = estado.frecuentes.find(x => x.id === borrar.dataset.borrar);
+            if (!f) return;
+            const ok = await dialogo({ titulo: 'Borrar checklist', texto: `«${f.nombre}» se borra para todo el equipo. La hoja actual no cambia.`, aceptar: 'Borrar', destructivo: true });
             if (!ok) return;
-            frecuentes = frecuentes.filter(x => x !== f);
-            pref.guardarJSON(CLAVE_FRECUENTES, frecuentes);
+            estado.frecuentes = estado.frecuentes.filter(x => x !== f);
+            encolar({ metodo: 'DELETE', ruta: `/api/frecuentes/${f.id}` });
             pintarFrecuentes();
             aviso(`Se borró «${f.nombre}».`);
         }
     });
     document.getElementById('btnGuardarFrecuente').addEventListener('click', guardarFrecuente);
+
+    // ---------- Sincronización con el servidor ----------
+    // Cada cambio se aplica al momento en pantalla y se guarda en la cola; la cola se sube en orden
+    // cuando hay conexión. Con la cola vacía se descarga lo último del equipo. Es automática y de fondo:
+    // no muestra pantalla de carga, solo el estado en el menú.
+    const puntoSync = document.getElementById('puntoSync'), textoSync = document.getElementById('textoSync');
+    let sincronizando = false, otraVez = false, ultimoError = '';
+
+    function pintarSync(fase) {
+        const n = pendientes.length;
+        const sinRed = fase === 'error';
+        textoSync.textContent = fase === 'subiendo' ? 'Sincronizando…'
+            : sinRed ? `Sin conexión${n ? ` · ${n} ${n === 1 ? 'cambio' : 'cambios'} por subir` : ''}`
+            : 'Compartido con el equipo';
+        textoSync.title = sinRed ? ultimoError : '';
+        puntoSync.className = 'punto ' + (sinRed ? '' : fase === 'subiendo' ? 'parcial' : 'completo');
+    }
+
+    function encolar(op) {
+        pendientes.push(op);
+        guardarLocal();
+        sincronizar();
+    }
+
+    async function llamar({ metodo = 'GET', ruta, cuerpo }) {
+        const r = await fetch(ruta, {
+            method: metodo,
+            headers: cuerpo ? { 'content-type': 'application/json' } : {},
+            body: cuerpo ? JSON.stringify(cuerpo) : undefined,
+            cache: 'no-store'
+        });
+        const datos = await r.json().catch(() => ({}));
+        return { estado: r.status, datos };
+    }
+
+    async function sincronizar() {
+        if (sincronizando) { otraVez = true; return; }
+        sincronizando = true;
+        pintarSync('subiendo');
+        try {
+            do {
+                otraVez = false;
+                while (pendientes.length) {
+                    const r = await llamar(pendientes[0]);
+                    // Servidor caído, sin base o límite de cambios: se reintenta después.
+                    if (r.estado >= 500 || r.estado === 429) throw new Error(r.datos.error || `Error ${r.estado}`);
+                    // Datos que el servidor rechaza (p. ej. algo ya borrado): se descartan para no trabar la cola.
+                    if (r.estado >= 400) console.warn('Cambio rechazado', pendientes[0], r.datos.error);
+                    pendientes.shift();
+                    guardarLocal();
+                }
+                const r = await llamar({ ruta: '/api/datos' });
+                if (r.estado !== 200) throw new Error(r.datos.error || `Error ${r.estado}`);
+                // Si hubo cambios mientras se descargaba, se suben primero y se vuelve a descargar.
+                if (pendientes.length) { otraVez = true; continue; }
+                estado = { articulos: r.datos.articulos, frecuentes: r.datos.frecuentes };
+                guardarLocal();
+                pintarPropios();
+                pintarFrecuentes();
+            } while (otraVez);
+            pintarSync('listo');
+        } catch (e) {
+            ultimoError = e.message;
+            pintarSync('error');
+        } finally {
+            sincronizando = false;
+        }
+    }
+
+    pintarPropios();
     pintarFrecuentes();
+    if (location.protocol.startsWith('http')) {
+        sincronizar();
+        window.addEventListener('online', sincronizar);
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') sincronizar(); });
+        setInterval(() => { if (document.visibilityState === 'visible') sincronizar(); }, 60000);
+    } else pintarSync('error');
 
     // ---------- Menú ----------
     const menu = document.getElementById('menu');
@@ -872,7 +993,13 @@
                 ['Instalar como app', 'agrega el checklist a tu pantalla de inicio para abrirlo sin navegador, incluso sin internet. Solo aparece si tu navegador lo permite y aún no está instalada.']
             ]
         },
-        { t: 'menu-pie', m: true, titulo: 'Avance', texto: 'Te dice cuántos artículos llevas marcados en total. El punto se pone turquesa cuando empiezas y verde cuando marcaste todo.' },
+        {
+            t: 'menu-pie', m: true, titulo: 'Avance y conexión', texto: 'Aquí ves dos cosas:',
+            lista: [
+                ['Avance', 'cuántos artículos llevas marcados. El punto se pone turquesa cuando empiezas y verde cuando marcaste todo.'],
+                ['Conexión', '«Compartido con el equipo» (punto verde) indica que tus cambios ya se subieron. Sin internet ves «Sin conexión» y cuántos cambios faltan por subir; se suben solos cuando regresa la señal.']
+            ]
+        },
         { t: 'ayuda', titulo: 'Botón de ayuda', texto: 'Si tienes dudas, toca el ? para volver a ver esta guía en cualquier momento.' },
         {
             t: 'frecuentes', titulo: 'Checklists frecuentes', texto: 'Si haces seguido el mismo tipo de instalación, no tienes que marcar todo cada vez:',
@@ -881,7 +1008,7 @@
                 ['Tocar una checklist', 'la carga en la hoja. Las que más usas aparecen primero.'],
                 ['Bote de basura', 'la borra de la lista; la hoja actual no cambia.']
             ],
-            nota: 'Se guardan en este dispositivo y en este navegador.'
+            nota: 'Se comparten con todo el equipo: lo que guardes aquí lo ven los demás, y lo que ellos guarden te aparece a ti.'
         },
         { t: 'datos', titulo: 'Datos del servicio', texto: 'Escribe quién es el responsable, la fecha, el proyecto y la ubicación de la instalación. Estos datos salen arriba en el reporte impreso.' },
         {
@@ -894,7 +1021,7 @@
         },
         { t: 'contador', titulo: 'Contador de la categoría', texto: 'Te dice cuántos artículos de esta tarjeta llevas marcados. Se pone en verde cuando la completas.' },
         {
-            t: 'agregar', titulo: 'Agregar artículos', texto: '¿Falta algo en la lista? Toca «Agregar artículo», escribe el nombre y pulsa Agregar. Entra marcado con cantidad 1 y se queda en la lista para las siguientes veces.',
+            t: 'agregar', titulo: 'Agregar artículos', texto: '¿Falta algo en la lista? Toca «Agregar artículo», escribe el nombre y pulsa Agregar. Entra marcado con cantidad 1 y se queda en la lista para todo el equipo.',
             nota: 'Los artículos que agregas llevan una × para quitarlos de la lista cuando ya no los necesites.'
         },
         { t: 'notas', titulo: 'Artículos extra o especiales', texto: 'Anota aquí lo que vayas a llevar solo esta vez, por ejemplo material específico del proyecto. Si es algo que llevas seguido, mejor agrégalo a su categoría.' },
