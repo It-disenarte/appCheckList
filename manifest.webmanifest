@@ -1,0 +1,20 @@
+{
+  "name": "Checklist de Instalaciones — Diseñarte México",
+  "short_name": "Checklist",
+  "description": "Hoja de control de equipo y materiales para instalaciones.",
+  "id": "/checklist/",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#FAFAFB",
+  "theme_color": "#7C07A6",
+  "lang": "es-MX",
+  "dir": "ltr",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

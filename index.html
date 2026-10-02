@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Checklist de Instalaciones — Diseñarte México</title>
+    <meta name="description" content="Hoja de control de equipo y materiales para instalaciones.">
+    <meta name="theme-color" content="#7C07A6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Checklist">
+    <link rel="icon" href="favicon.ico?v=2" sizes="16x16 32x32 48x48">
+    <link rel="icon" href="favicon.svg?v=2" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=2">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="stylesheet" href="fonts/poppins.css">
+    <style>
+        /* Colores del Manual de Marca de Diseñarte México (los mismos del Cotizador). */
+        :root {
+            --magenta: #A53692;
+            --turquesa: #5CC6D0;
+            --gris-marca: #96989A;
+            --morado: #7C07A6;
+            --morado-oscuro: #6A0590;
+            --fondo: #FAFAFB;
+            --tarjeta: #FFFFFF;
+            --texto: #1D1B22;
+            --texto-2: #4B4853;
+            --texto-3: #62606A;
+            --borde: #E4E1E8;
+            --borde-campo: #D6D2DC;
+            --muted: #F3F1F5;
+            --error: #B3261E;
+            --exito: #2E7D4F;
+            --filete: linear-gradient(90deg, var(--turquesa), var(--magenta));
+            --menu: 256px;
+            --barra: 56px;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Poppins', system-ui, sans-serif;
+            color: var(--texto);
+            margin: 0;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+        input, textarea, button { font: inherit; color: inherit; }
+        svg.ico { width: 18px; height: 18px; flex-shrink: 0; }
+        [data-icono] { display: inline-flex; }
+
+        /* Textura gráfica del manual, muy tenue para no afectar la lectura. */
+        .fondo-textura { position: relative; isolation: isolate; background: var(--fondo); }
+        .fondo-textura::before {
+            content: ""; position: fixed; inset: 0; z-index: -1;
+            background-image: url(img/textura.jpg); background-size: 640px; opacity: .07; pointer-events: none;
+        }
+        .filete { height: 2px; background: var(--filete); border-radius: 2px; }
+
+        /* ---------- Bloque de marca ---------- */
+        .marca { display: flex; align-items: center; gap: 12px; min-width: 0; }
+        .marca img { flex-shrink: 0; display: block; }
+        .marca-nombre { margin: 0; font-weight: 600; font-size: 18px; line-height: 1.2; }
+        .marca-sub { margin: 2px 0 0; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .25em; line-height: 1.3; }
+
+        /* ---------- Barra superior (celular) ---------- */
+        .topbar {
+            position: sticky; top: 0; z-index: 40;
+            display: flex; align-items: center; gap: 10px;
+            height: calc(var(--barra) + env(safe-area-inset-top));
+            padding: env(safe-area-inset-top) 8px 0;
+            background: var(--morado); color: #fff;
+        }
+        .topbar .titulo-app { flex: 1; display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 16px; min-width: 0; }
+        .topbar::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--filete); }
+        .btn-icono {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 40px; height: 40px; border: 0; border-radius: 8px; background: transparent; color: #fff; cursor: pointer;
+        }
+        .btn-icono:hover { background: rgba(255,255,255,.1); }
+        .btn-icono svg.ico { width: 22px; height: 22px; }
+
+        /* ---------- Menú lateral ---------- */
+        .menu {
+            position: fixed; top: 0; bottom: 0; left: 0; z-index: 50;
+            width: var(--menu); max-width: 86vw;
+            display: flex; flex-direction: column;
+            background: var(--morado); color: #fff;
+            overflow-y: auto;
+            transform: translateX(-100%); transition: transform .22s ease-out;
+            padding-top: env(safe-area-inset-top);
+        }
+        .menu.abierto { transform: none; box-shadow: 0 0 40px rgba(0,0,0,.25); }
+        .velo {
+            position: fixed; inset: 0; z-index: 45; background: rgba(29,27,34,.4);
+            opacity: 0; pointer-events: none; transition: opacity .22s;
+        }
+        .velo.visible { opacity: 1; pointer-events: auto; }
+        .menu-cerrar { position: absolute; top: calc(10px + env(safe-area-inset-top)); right: 8px; }
+        .menu .marca { padding: 32px 24px 22px; }
+        .menu .marca-nombre { color: #fff; }
+        .menu .marca-sub { color: rgba(255,255,255,.75); }
+        .menu-filete { margin: 0 24px; }
+        .menu nav { padding: 18px 12px 8px; display: flex; flex-direction: column; gap: 2px; }
+        .menu-item {
+            display: flex; align-items: center; gap: 12px; width: 100%;
+            padding: 9px 12px; border: 0; border-radius: 8px; background: transparent;
+            color: rgba(255,255,255,.85); font-size: 14px; text-align: left; text-decoration: none; cursor: pointer;
+            transition: background .15s, color .15s;
+        }
+        .menu-item svg.ico { width: 17px; height: 17px; }
+        .menu-item:hover { background: rgba(255,255,255,.1); color: #fff; }
+        .menu-item.activo { background: #fff; color: var(--morado); font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+        .menu-item .cuenta { margin-left: auto; font-size: 12px; opacity: .75; }
+        .menu-opciones { padding: 8px 12px 12px; margin-top: auto; }
+        .menu-etiqueta { margin: 8px 12px 6px; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .08em; color: rgba(255,255,255,.55); }
+        .interruptor {
+            margin-left: auto; position: relative; width: 34px; height: 20px; border-radius: 10px;
+            background: rgba(255,255,255,.25); transition: background .15s; flex-shrink: 0;
+        }
+        .interruptor::after {
+            content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+            background: #fff; transition: transform .15s;
+        }
+        [aria-checked="true"] .interruptor { background: var(--turquesa); }
+        [aria-checked="true"] .interruptor::after { transform: translateX(14px); }
+        .menu-pie { border-top: 1px solid rgba(255,255,255,.15); padding: 14px 24px calc(16px + env(safe-area-inset-bottom)); }
+        .menu-pie p { margin: 0; }
+        .menu-pie .pie-titulo { font-size: 14px; font-weight: 500; }
+        .menu-pie .pie-estado { display: flex; align-items: center; gap: 8px; margin-top: 2px; font-size: 12px; color: rgba(255,255,255,.7); }
+        .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--gris-marca); flex-shrink: 0; }
+        .punto.parcial { background: var(--turquesa); }
+        .punto.completo { background: #7FD8A3; }
+        .menu-pie .web { margin-top: 10px; font-size: 12px; color: rgba(255,255,255,.6); }
+
+        /* ---------- Contenido ---------- */
+        .contenido { max-width: 1120px; margin: 0 auto; padding: 24px 16px 24px; }
+        .contexto { margin: 0 0 2px; font-size: 14px; color: var(--texto-3); }
+        h1 { margin: 0 0 20px; color: var(--morado); font-weight: 600; font-size: 24px; line-height: 1.25; }
+        section { scroll-margin-top: calc(var(--barra) + 16px); }
+        .tarjeta {
+            background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 14px;
+            box-shadow: 0 1px 2px rgba(29,27,34,.05); padding: 20px; transition: border-color .15s;
+        }
+        .tarjeta:hover { border-color: var(--borde-campo); }
+        .tarjeta + .tarjeta, .categorias + .tarjeta, .tarjeta + .categorias { margin-top: 16px; }
+        .tarjeta h2 { margin: 0 0 14px; font-size: 16px; font-weight: 600; color: var(--texto); }
+
+        .campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+        .campo label { display: block; margin-bottom: 6px; font-size: 14px; font-weight: 500; color: var(--texto); }
+        .campo input, textarea, .cant {
+            width: 100%; height: 44px; padding: 0 12px;
+            background: #fff; border: 1px solid var(--borde-campo); border-radius: 8px;
+            font-size: 16px; color: var(--texto); outline: none;
+            transition: border-color .15s, box-shadow .15s;
+        }
+        textarea { height: auto; min-height: 88px; padding: 10px 12px; resize: vertical; line-height: 1.5; }
+        .campo input:focus, textarea:focus, .cant:focus { border-color: var(--morado); box-shadow: 0 0 0 3px rgba(124,7,166,.15); }
+        ::placeholder { color: var(--gris-marca); }
+
+        .categorias { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; align-items: start; }
+        .categorias > .tarjeta { margin-top: 0 !important; }
+        .categoria h2 { display: flex; align-items: center; gap: 10px; }
+        .categoria h2 svg.ico { color: var(--morado); }
+        .contador {
+            margin-left: auto; padding: 2px 8px; border-radius: 6px;
+            background: var(--muted); color: var(--texto-3); font-size: 12px; font-weight: 500; white-space: nowrap;
+        }
+        .contador.completo { background: #E6F3EB; color: var(--exito); }
+        .lista { list-style: none; margin: 0 -8px; padding: 0; }
+        .lista li { display: flex; align-items: center; gap: 10px; padding: 4px 8px; border-radius: 8px; }
+        .lista li:hover { background: var(--muted); }
+        .lista .cant { width: 52px; height: 36px; padding: 0 4px; text-align: center; flex-shrink: 0; }
+        .lista label { flex: 1; display: flex; align-items: center; gap: 10px; min-height: 36px; cursor: pointer; font-size: 14px; color: var(--texto-2); }
+        .lista input[type="checkbox"] { width: 18px; height: 18px; margin: 0; accent-color: var(--morado); cursor: pointer; flex-shrink: 0; }
+        .lista li.selected label { color: var(--texto); font-weight: 500; }
+
+        .firmas { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+        .firma { padding-top: 64px; text-align: center; }
+        .firma div { border-top: 1px solid var(--texto-2); padding-top: 8px; font-size: 14px; font-weight: 500; color: var(--texto-2); }
+
+        /* Solo en el reporte impreso. */
+        .marca-impresion { display: none; }
+
+        /* ---------- Barra de acciones ---------- */
+        .barra-acciones {
+            position: sticky; bottom: 0; z-index: 30;
+            display: flex; justify-content: flex-end; gap: 8px;
+            padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+            background: #fff; border-top: 1px solid var(--borde);
+        }
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            height: 42px; padding: 0 16px; border-radius: 8px; border: 1px solid transparent;
+            font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap;
+            transition: background .15s, border-color .15s;
+        }
+        .btn-primario { background: var(--morado); color: #fff; }
+        .btn-primario:hover { background: var(--morado-oscuro); }
+        .btn-contorno { background: #fff; border-color: var(--borde-campo); color: var(--morado); }
+        .btn-contorno:hover { background: var(--muted); }
+        .btn-fantasma { background: transparent; color: var(--morado); }
+        .btn-fantasma:hover { background: rgba(124,7,166,.08); }
+        .btn-sm { height: 36px; padding: 0 14px; font-size: 13px; }
+        .btn:focus-visible, .menu-item:focus-visible, .btn-icono:focus-visible { outline: 2px solid var(--turquesa); outline-offset: 2px; }
+
+        /* ---------- Asistente de uso ---------- */
+        .guia { position: fixed; inset: 0; z-index: 70; }
+        .guia-fondo { position: fixed; inset: 0; background: rgba(29,27,34,.55); }
+        .guia-aro {
+            position: fixed; border-radius: 12px; pointer-events: none;
+            box-shadow: 0 0 0 2px var(--turquesa), 0 0 0 9999px rgba(29,27,34,.55);
+            transition: all .2s ease-out;
+        }
+        .guia-tarjeta {
+            position: fixed; width: min(360px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow-y: auto;
+            background: #fff; border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,.22);
+            animation: guiaEntra .18s ease-out;
+        }
+        @keyframes guiaEntra { from { opacity: 0; } }
+        .guia-filete { height: 4px; background: var(--filete); }
+        .guia-cuerpo { padding: 14px 18px 16px; }
+        .guia-cab { display: flex; align-items: center; justify-content: space-between; }
+        .guia-paso { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--morado); }
+        .guia-x { border: 0; background: none; padding: 4px; margin: -4px; color: var(--gris-marca); cursor: pointer; border-radius: 6px; display: inline-flex; }
+        .guia-x:hover { background: var(--muted); }
+        .guia h3 { margin: 6px 0 4px; font-size: 17px; font-weight: 600; color: var(--texto); }
+        .guia-texto { margin: 0; font-size: 14px; line-height: 1.5; color: var(--texto-2); }
+        .guia-lista { margin: 10px 0 0; padding: 0; list-style: none; }
+        .guia-lista li { border-left: 2px solid var(--borde); padding: 2px 0 2px 10px; margin-top: 6px; font-size: 13px; line-height: 1.45; color: var(--texto-2); }
+        .guia-lista b { color: var(--texto); font-weight: 600; }
+        .guia-nota { margin-top: 10px; padding: 8px 10px; border-radius: 8px; background: #F3EAF8; font-size: 12px; line-height: 1.45; color: var(--texto-2); }
+        .guia-avance { display: flex; gap: 4px; margin-top: 14px; }
+        .guia-avance span { flex: 1; height: 3px; border-radius: 2px; background: var(--borde); transition: background .2s; }
+        .guia-avance span.visto { background: var(--morado); }
+        .guia-botones { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 14px; }
+        .guia-saltar { border: 0; background: none; padding: 8px 0; color: var(--gris-marca); font-size: 13px; font-weight: 600; cursor: pointer; }
+        .guia-no-mostrar { display: flex; align-items: flex-start; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--borde); font-size: 12px; color: var(--texto-2); cursor: pointer; }
+        .guia-no-mostrar input { margin: 2px 0 0; accent-color: var(--morado); }
+        .guia-no-mostrar span span { color: var(--gris-marca); }
+
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            *, *::before, *::after { transition: none !important; animation: none !important; }
+        }
+
+        /* ---------- Escritorio ---------- */
+        @media (min-width: 768px) {
+            .topbar, .velo, .menu-cerrar { display: none !important; }
+            .menu { transform: none; max-width: none; box-shadow: none !important; }
+            main { margin-left: var(--menu); }
+            .contenido { padding: 40px 32px 32px; }
+            h1 { font-size: 28px; }
+            section { scroll-margin-top: 24px; }
+            .barra-acciones { padding: 12px 32px; }
+        }
+        @media (max-width: 520px) {
+            .firmas { grid-template-columns: 1fr; gap: 0; }
+            .barra-acciones { justify-content: stretch; }
+            .barra-acciones .btn { flex: 1; padding: 0 10px; }
+            .barra-acciones .largo { display: none; }
+        }
+
+        /* ---------- Reporte impreso ---------- */
+        @media print {
+            @page { margin: 10mm; }
+            body { background: #fff; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            .fondo-textura::before, .topbar, .velo, .menu, .barra-acciones, .guia, .contexto { display: none !important; }
+            main { margin: 0; }
+            .contenido { max-width: none; padding: 0; }
+            .encabezado { display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; margin-bottom: 10px; border-bottom: 3px solid transparent; border-image: var(--filete) 1; }
+            .marca-impresion { display: flex; }
+            .marca-impresion .marca-nombre { color: var(--morado); font-size: 14px; }
+            .marca-impresion .marca-sub { color: var(--texto-3); font-size: 8px; }
+            h1 { font-size: 15px; margin: 0; }
+            .tarjeta { box-shadow: none; border-radius: 6px; padding: 8px; break-inside: avoid; }
+            .tarjeta + .tarjeta, .categorias + .tarjeta, .tarjeta + .categorias { margin-top: 8px; }
+            .tarjeta h2 { font-size: 10px; margin: 0 0 6px; }
+            .campos { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+            .campo label { font-size: 8px; margin-bottom: 2px; color: var(--texto-3); }
+            .campo input { height: 22px; font-size: 10px; padding: 0 6px; border-radius: 4px; }
+            .categorias { grid-template-columns: repeat(5, 1fr); gap: 8px; }
+            .categoria h2 svg.ico { width: 11px; height: 11px; }
+            .contador { font-size: 8px; padding: 0 4px; }
+            .lista { margin: 0; }
+            .lista li { padding: 1px 0; gap: 4px; }
+            .lista .cant { width: 22px; height: 16px; font-size: 8px; padding: 0; border-radius: 3px; }
+            .lista label { min-height: 16px; gap: 4px; font-size: 8px; }
+            .lista input[type="checkbox"] { width: 10px; height: 10px; }
+            textarea { min-height: 34px; font-size: 9px; padding: 4px 6px; resize: none; border-radius: 4px; }
+            .firmas { gap: 40px; }
+            .firma { padding-top: 34px; }
+            .firma div { font-size: 9px; }
+        }
+    </style>
+</head>
+<body class="fondo-textura">
+
+<!-- Celular: barra superior con menú, marca y ayuda. -->
+<header class="topbar">
+    <button class="btn-icono" id="btnMenu" data-guide="menu-boton" aria-label="Abrir el menú" aria-controls="menu" aria-expanded="false" data-icono="menu"></button>
+    <span class="titulo-app"><img src="icons/hoja-blanca.svg?v=2" width="30" height="30" alt="">Checklist</span>
+    <button class="btn-icono" id="btnAyuda" data-guide="ayuda" aria-label="Ver la guía de esta pantalla" data-icono="ayuda"></button>
+</header>
+<div class="velo" id="velo"></div>
+
+<aside class="menu" id="menu" aria-label="Menú">
+    <button class="btn-icono menu-cerrar" id="btnCerrarMenu" aria-label="Cerrar el menú" data-icono="x"></button>
+    <div class="marca">
+        <img src="icons/hoja-blanca.svg?v=2" width="44" height="44" alt="">
+        <div>
+            <p class="marca-nombre">Checklist</p>
+            <p class="marca-sub">Diseñarte México</p>
+        </div>
+    </div>
+    <div class="filete menu-filete"></div>
+    <nav id="navSecciones" data-guide="menu-secciones"></nav>
+
+    <div class="menu-opciones" data-guide="menu-opciones">
+        <p class="menu-etiqueta">Opciones</p>
+        <button class="menu-item" id="btnAsistente" role="switch" aria-checked="true">
+            <span data-icono="asistente"></span>Asistente de uso<span class="interruptor"></span>
+        </button>
+        <button class="menu-item" id="btnVerGuia"><span data-icono="ayuda"></span>Ver guía de esta pantalla</button>
+        <button class="menu-item" id="btnInstalar" hidden><span data-icono="instalar"></span>Instalar como app</button>
+    </div>
+
+    <div class="menu-pie" data-guide="menu-pie">
+        <p class="pie-titulo">Avance</p>
+        <p class="pie-estado"><span class="punto" id="puntoAvance"></span><span id="textoAvance">0 artículos marcados</span></p>
+        <p class="web">www.disenartemx.com</p>
+    </div>
+</aside>
+
+<main>
+    <div class="contenido">
+        <div class="encabezado">
+            <div class="marca marca-impresion">
+                <img src="icons/hoja.svg?v=2" width="30" height="30" alt="">
+                <div>
+                    <p class="marca-nombre">Checklist</p>
+                    <p class="marca-sub">Diseñarte México</p>
+                </div>
+            </div>
+            <div>
+                <p class="contexto">Checklist de instalación</p>
+                <h1>Hoja de control: equipo y materiales</h1>
+            </div>
+        </div>
+
+        <section id="datos" class="tarjeta" data-guide="datos">
+            <h2>Datos del servicio</h2>
+            <div class="campos">
+                <div class="campo"><label for="responsable">Responsable</label><input id="responsable" type="text" autocomplete="name"></div>
+                <div class="campo"><label for="fecha">Fecha</label><input id="fecha" type="date"></div>
+                <div class="campo"><label for="proyecto">Proyecto</label><input id="proyecto" type="text"></div>
+                <div class="campo"><label for="ubicacion">Ubicación</label><input id="ubicacion" type="text"></div>
+            </div>
+        </section>
+
+        <div class="categorias" id="categorias"></div>
+
+        <section id="notas" class="tarjeta" data-guide="notas">
+            <h2><label for="extras">Artículos extra o especiales</label></h2>
+            <textarea id="extras" placeholder="Escribe aquí lo que no está en la lista"></textarea>
+        </section>
+
+        <section id="firmas" class="tarjeta firmas" data-guide="firmas">
+            <div class="firma"><div>Firma del responsable</div></div>
+            <div class="firma"><div>Firma de autorización</div></div>
+        </section>
+    </div>
+
+    <div class="barra-acciones" data-guide="acciones">
+        <button class="btn btn-fantasma" onclick="deseleccionarTodo()"><span data-icono="limpiar"></span><span>Desmarcar<span class="largo"> todo</span></span></button>
+        <button class="btn btn-contorno" onclick="seleccionarTodo()"><span data-icono="todo"></span><span>Marcar<span class="largo"> todo</span></span></button>
+        <button class="btn btn-primario" onclick="window.print()"><span data-icono="imprimir"></span><span>Imprimir<span class="largo"> reporte</span></span></button>
+    </div>
+</main>
+
+<script>
+    // Íconos de línea (paths de lucide: trazo 2, extremos redondeados).
+    const ICONOS = {
+        menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+        x: '<path d="M18 6 6 18M6 6l12 12"/>',
+        ayuda: '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
+        asistente: '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>',
+        instalar: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',
+        todo: '<path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/>',
+        limpiar: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
+        imprimir: '<path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/>',
+        datos: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8M16 17H8M10 9H8"/>',
+        regla: '<path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2M11.5 9.5l2-2M8.5 6.5l2-2M17.5 15.5l2-2"/>',
+        martillo: '<path d="m15 12-8.373 8.373a1 1 0 1 1-3-3L12 9"/><path d="m18 15 4-4"/><path d="m21.5 11.5-1.914-1.914A2 2 0 0 1 19 8.172V7l-2.26-2.26a6 6 0 0 0-4.202-1.756L9 2.96l.92.82A6.18 6.18 0 0 1 12 8.4V10l2 2h1.172a2 2 0 0 1 1.414.586L18.5 14.5"/>',
+        rayo: '<path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>',
+        brocha: '<path d="m11 10 3 3"/><path d="M6.5 21A3.5 3.5 0 1 0 3 17.5a2.62 2.62 0 0 1-.708 1.792A1 1 0 0 0 3 21z"/><path d="M9.969 17.031 21.378 5.624a1 1 0 0 0-3.002-3.002L6.967 14.031"/>',
+        casco: '<path d="M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5"/><path d="M14 6a6 6 0 0 1 6 6v3"/><path d="M4 15v-3a6 6 0 0 1 6-6"/><rect x="2" y="15" width="20" height="4" rx="1"/>',
+        firma: '<path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/>'
+    };
+    const icono = (n) => `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONOS[n]}</svg>`;
+    document.querySelectorAll('[data-icono]').forEach(el => { el.innerHTML = icono(el.dataset.icono); });
+
+    const CATEGORIAS = [
+        { id: 'diseno', nombre: 'Diseño y marcaje', icono: 'regla', items: ['Plantilla, referencias o diseño', 'Láser de nivelación', 'Flexómetro', 'Tiralíneas', 'Regla metálica', 'Regla plástica', 'Lápiz, pluma o marcador'] },
+        { id: 'montaje', nombre: 'Montaje y fijación', icono: 'martillo', items: ['Cinta roja 3M (fijación)', 'Transfer', 'Raseros de plástico', 'Navaja de un filo', 'Cutter', 'Martillo', 'Juego de llaves', 'Desarmador cruz / plano', 'Rodillos', 'Cinta masking'] },
+        { id: 'electrico', nombre: 'Equipo eléctrico', icono: 'rayo', items: ['Aspiradora', 'Taladro / rotomartillo', 'Brocas', 'Pistola de calor', 'Extensión eléctrica'] },
+        { id: 'limpieza', nombre: 'Limpieza y varios', icono: 'brocha', items: ['Jalador de agua', 'Atomizador con jabón', 'Solvente', 'Trapo', 'Estopa', 'Bolsas de basura', 'Cinta de peligro', 'Carro transportador'] },
+        { id: 'epp', nombre: 'EPP y alturas', icono: 'casco', items: ['Casco con barbiquejo', 'Lentes de protección', 'Guantes de trabajo', 'Chaleco reflejante', 'Rodilleras', 'Arnés / línea de vida', 'Escalera chica', 'Escalera mediana', 'Escalera grande'] }
+    ];
+
+    // ---------- Hoja de control ----------
+    document.getElementById('categorias').innerHTML = CATEGORIAS.map((c, n) => `
+        <section id="${c.id}" class="tarjeta categoria"${n === 0 ? ' data-guide="categoria"' : ''}>
+            <h2>${icono(c.icono)}${n + 1}. ${c.nombre}<span class="contador"${n === 0 ? ' data-guide="contador"' : ''}>0/${c.items.length}</span></h2>
+            <ul class="lista">${c.items.map((item, k) => `
+                <li><input type="text" inputmode="numeric" class="cant" placeholder="0" maxlength="3" aria-label="Cantidad de ${item}">
+                    <label><input type="checkbox" id="${c.id}-${k}">${item}</label></li>`).join('')}
+            </ul>
+        </section>`).join('');
+
+    const SECCIONES = [
+        { id: 'datos', nombre: 'Datos del servicio', icono: 'datos' },
+        ...CATEGORIAS.map(c => ({ id: c.id, nombre: c.nombre, icono: c.icono, total: c.items.length })),
+        { id: 'notas', nombre: 'Extras y firmas', icono: 'firma' }
+    ];
+    const nav = document.getElementById('navSecciones');
+    nav.innerHTML = SECCIONES.map(s =>
+        `<a class="menu-item" href="#${s.id}" data-seccion="${s.id}">${icono(s.icono)}<span>${s.nombre}</span>${s.total ? `<span class="cuenta" data-cuenta="${s.id}"></span>` : ''}</a>`
+    ).join('');
+
+    function marcar(li, activo) {
+        li.querySelector('input[type="checkbox"]').checked = activo;
+        li.classList.toggle('selected', activo);
+        const cant = li.querySelector('.cant');
+        if (activo && (cant.value === '' || cant.value === '0')) cant.value = '1';
+        if (!activo) cant.value = '';
+    }
+
+    function actualizarAvance() {
+        let marcados = 0, total = 0;
+        document.querySelectorAll('.categoria').forEach(sec => {
+            const n = sec.querySelectorAll('li.selected').length, t = sec.querySelectorAll('li').length;
+            marcados += n; total += t;
+            const cont = sec.querySelector('.contador');
+            cont.textContent = `${n}/${t}`;
+            cont.classList.toggle('completo', n === t);
+            nav.querySelector(`[data-cuenta="${sec.id}"]`).textContent = n ? `${n}/${t}` : '';
+        });
+        document.getElementById('textoAvance').textContent = `${marcados} de ${total} artículos marcados`;
+        const punto = document.getElementById('puntoAvance');
+        punto.classList.toggle('parcial', marcados > 0 && marcados < total);
+        punto.classList.toggle('completo', marcados === total);
+    }
+
+    function seleccionarTodo() {
+        document.querySelectorAll('.lista li').forEach(li => marcar(li, true));
+        actualizarAvance();
+    }
+
+    function deseleccionarTodo() {
+        document.querySelectorAll('.lista li').forEach(li => marcar(li, false));
+        actualizarAvance();
+    }
+
+    document.querySelectorAll('.lista li').forEach(li => {
+        const checkbox = li.querySelector('input[type="checkbox"]');
+        const cant = li.querySelector('.cant');
+
+        checkbox.addEventListener('change', () => { marcar(li, checkbox.checked); actualizarAvance(); });
+
+        // Solo números: se quitan las letras al escribir o pegar.
+        cant.addEventListener('input', () => {
+            cant.value = cant.value.replace(/\D/g, '');
+            const activo = parseInt(cant.value) > 0;
+            checkbox.checked = activo;
+            li.classList.toggle('selected', activo);
+            actualizarAvance();
+        });
+    });
+    actualizarAvance();
+
+    // ---------- Menú ----------
+    const menu = document.getElementById('menu');
+    const velo = document.getElementById('velo');
+    const btnMenu = document.getElementById('btnMenu');
+    const esCelular = () => window.innerWidth < 768;
+
+    function abrirMenu() {
+        menu.classList.add('abierto'); velo.classList.add('visible'); btnMenu.setAttribute('aria-expanded', 'true');
+    }
+    function cerrarMenu() {
+        menu.classList.remove('abierto'); velo.classList.remove('visible'); btnMenu.setAttribute('aria-expanded', 'false');
+    }
+    btnMenu.addEventListener('click', abrirMenu);
+    document.getElementById('btnCerrarMenu').addEventListener('click', cerrarMenu);
+    velo.addEventListener('click', cerrarMenu);
+    nav.addEventListener('click', e => { if (e.target.closest('a') && esCelular()) cerrarMenu(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && menu.classList.contains('abierto') && !Guia.activa()) cerrarMenu(); });
+
+    // Sección activa del menú según lo que está en pantalla.
+    const enlaces = {};
+    nav.querySelectorAll('[data-seccion]').forEach(a => { enlaces[a.dataset.seccion] = a; });
+    // Es la última sección cuyo inicio ya pasó el 35 % de la ventana (en una fila de tarjetas, la primera).
+    const secciones = [...document.querySelectorAll('main section[id]')];
+    let pendiente = false;
+    function marcarSeccion() {
+        pendiente = false;
+        const limite = window.innerHeight * .35;
+        let actual = secciones[0], arriba = -Infinity;
+        for (const s of secciones) {
+            const top = Math.round(s.getBoundingClientRect().top);
+            if (top <= limite && top > arriba) { actual = s; arriba = top; }
+        }
+        if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) actual = secciones[secciones.length - 1];
+        const id = actual.id === 'firmas' ? 'notas' : actual.id;
+        Object.values(enlaces).forEach(a => {
+            a.classList.toggle('activo', a === enlaces[id]);
+            if (a === enlaces[id]) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current');
+        });
+    }
+    window.addEventListener('scroll', () => { if (!pendiente) { pendiente = true; requestAnimationFrame(marcarSeccion); } }, { passive: true });
+    window.addEventListener('resize', marcarSeccion);
+    marcarSeccion();
+
+    // ---------- Preferencias (localStorage puede fallar en modo privado) ----------
+    const pref = {
+        leer(k) { try { return localStorage.getItem(k); } catch { return null; } },
+        guardar(k, v) { try { localStorage.setItem(k, v); } catch { /* sin almacenamiento */ } }
+    };
+    const CLAVE_ASISTENTE = 'checklist.asistente';
+    const btnAsistente = document.getElementById('btnAsistente');
+    const asistenteActivo = () => pref.leer(CLAVE_ASISTENTE) !== 'off';
+    function ponerAsistente(activo) {
+        pref.guardar(CLAVE_ASISTENTE, activo ? 'on' : 'off');
+        btnAsistente.setAttribute('aria-checked', String(activo));
+    }
+    btnAsistente.setAttribute('aria-checked', String(asistenteActivo()));
+    btnAsistente.addEventListener('click', () => ponerAsistente(!asistenteActivo()));
+
+    // ---------- Instalar como app ----------
+    let avisoInstalar = null;
+    const btnInstalar = document.getElementById('btnInstalar');
+    const instalada = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+    window.addEventListener('beforeinstallprompt', e => {
+        e.preventDefault();
+        avisoInstalar = e;
+        if (!instalada()) btnInstalar.hidden = false;
+    });
+    window.addEventListener('appinstalled', () => { btnInstalar.hidden = true; avisoInstalar = null; });
+    btnInstalar.addEventListener('click', async () => {
+        if (!avisoInstalar) return;
+        avisoInstalar.prompt();
+        await avisoInstalar.userChoice;
+        avisoInstalar = null;
+        btnInstalar.hidden = true;
+    });
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+
+    // ---------- Asistente de uso ----------
+    // Paso: { t: data-guide del elemento, m: está en el menú, titulo, texto, lista: [[etiqueta, texto]], nota }.
+    // Los pasos cuyo elemento no está en pantalla (p. ej. el botón ☰ en escritorio) se descartan al iniciar.
+    const PASOS = [
+        {
+            titulo: '¡Bienvenido al Checklist de Instalaciones!',
+            texto: 'Con esta hoja revisas que lleves todo el equipo y los materiales antes de salir a una instalación, y la imprimes como reporte para que la firmen. Este asistente te explica para qué sirve cada parte.',
+            nota: 'Avanza con "Siguiente" o con las flechas del teclado. "Saltar" cierra la guía. Si ya no la necesitas, marca "No volver a mostrar el asistente" abajo.'
+        },
+        { t: 'menu-boton', titulo: 'Botón de menú', texto: 'Toca este botón para abrir el menú. Desde ahí saltas a cualquier sección de la hoja. Se cierra al elegir una opción, tocando fuera o con la ×.' },
+        { t: 'menu-secciones', m: true, titulo: 'Secciones de la hoja', texto: 'Cada opción te lleva directo a una parte de la hoja. La que estás viendo se marca en blanco y, junto a cada categoría, ves cuántos artículos llevas marcados.' },
+        {
+            t: 'menu-opciones', m: true, titulo: 'Opciones', texto: 'Aquí ajustas cómo funciona la app:',
+            lista: [
+                ['Asistente de uso', 'enciéndelo o apágalo. Encendido, esta guía aparece cada vez que abres la app.'],
+                ['Ver guía de esta pantalla', 'vuelve a mostrar esta guía aunque el asistente esté apagado.'],
+                ['Instalar como app', 'agrega el checklist a tu pantalla de inicio para abrirlo sin navegador, incluso sin internet. Solo aparece si tu navegador lo permite y aún no está instalada.']
+            ]
+        },
+        { t: 'menu-pie', m: true, titulo: 'Avance', texto: 'Te dice cuántos artículos llevas marcados en total. El punto se pone turquesa cuando empiezas y verde cuando marcaste todo.' },
+        { t: 'ayuda', titulo: 'Botón de ayuda', texto: 'Si tienes dudas, toca el ? para volver a ver esta guía en cualquier momento.' },
+        { t: 'datos', titulo: 'Datos del servicio', texto: 'Escribe quién es el responsable, la fecha, el proyecto y la ubicación de la instalación. Estos datos salen arriba en el reporte impreso.' },
+        {
+            t: 'categoria', titulo: 'Equipo y materiales', texto: 'Cada tarjeta agrupa lo que se necesita para una parte del trabajo. En cada renglón:',
+            lista: [
+                ['Cantidad', 'escribe cuántas piezas llevas; al poner un número el artículo se marca solo.'],
+                ['Casilla', 'márcala para indicar que ya lo llevas; si no tenía cantidad, se pone 1. Al desmarcarla se borra la cantidad.']
+            ],
+            nota: 'Puedes tocar el nombre del artículo para marcarlo o desmarcarlo.'
+        },
+        { t: 'contador', titulo: 'Contador de la categoría', texto: 'Te dice cuántos artículos de esta tarjeta llevas marcados. Se pone en verde cuando la completas.' },
+        { t: 'notas', titulo: 'Artículos extra o especiales', texto: 'Anota aquí todo lo que vayas a llevar y no esté en la lista, por ejemplo material específico del proyecto.' },
+        { t: 'firmas', titulo: 'Firmas', texto: 'En el reporte impreso, el responsable y quien autoriza firman en estas líneas para confirmar lo que salió.' },
+        {
+            t: 'acciones', titulo: 'Acciones', texto: 'Estos botones están siempre a la mano:',
+            lista: [
+                ['Desmarcar todo', 'quita todas las marcas y cantidades para empezar una hoja nueva.'],
+                ['Marcar todo', 'marca todos los artículos con cantidad 1; luego ajusta lo que cambie.'],
+                ['Imprimir reporte', 'abre la impresión con la hoja en una sola página. Desde ahí también puedes guardarla como PDF.']
+            ]
+        }
+    ];
+
+    const Guia = (() => {
+        const PAD = 6, GAP = 12;
+        let pasos = [], i = 0, capa = null, aro, fondo, tarjeta, abrioMenu = false, temporizador = 0, enfocadoAntes = null;
+        const buscar = (t) => t ? document.querySelector(`[data-guide="${t}"]`) : null;
+        const visible = (p) => !p.t || (buscar(p.t) && buscar(p.t).getClientRects().length > 0);
+
+        function iniciar() {
+            if (capa) return;
+            pasos = PASOS.filter(visible);
+            i = 0;
+            enfocadoAntes = document.activeElement;
+            capa = document.createElement('div');
+            capa.className = 'guia';
+            capa.setAttribute('role', 'dialog');
+            capa.setAttribute('aria-modal', 'true');
+            capa.setAttribute('aria-labelledby', 'guiaTitulo');
+            capa.innerHTML = '<div class="guia-fondo"></div><div class="guia-aro"></div><div class="guia-tarjeta"></div>';
+            [fondo, aro, tarjeta] = capa.children;
+            document.body.appendChild(capa);
+            window.addEventListener('resize', medir);
+            window.addEventListener('scroll', medir, true);
+            document.addEventListener('keydown', teclas);
+            ir(0);
+        }
+
+        function terminar() {
+            const noMostrar = tarjeta.querySelector('#guiaNoMostrar').checked;
+            clearTimeout(temporizador);
+            if (abrioMenu) { cerrarMenu(); abrioMenu = false; }
+            if (noMostrar) ponerAsistente(false);
+            window.removeEventListener('resize', medir);
+            window.removeEventListener('scroll', medir, true);
+            document.removeEventListener('keydown', teclas);
+            capa.remove();
+            capa = null;
+            if (enfocadoAntes && enfocadoAntes.focus) enfocadoAntes.focus();
+        }
+
+        function teclas(e) {
+            if (e.key === 'Escape') terminar();
+            else if (e.key === 'ArrowRight') siguiente();
+            else if (e.key === 'ArrowLeft' && i > 0) ir(i - 1);
+        }
+        const siguiente = () => (i === pasos.length - 1 ? terminar() : ir(i + 1));
+
+        function ir(n) {
+            const noMostrar = tarjeta.querySelector('#guiaNoMostrar');
+            const marcado = noMostrar ? noMostrar.checked : false;
+            i = n;
+            const p = pasos[i], ultimo = i === pasos.length - 1;
+            tarjeta.innerHTML = `
+                <div class="guia-filete"></div>
+                <div class="guia-cuerpo">
+                    <div class="guia-cab"><span class="guia-paso">Asistente · ${i + 1} de ${pasos.length}</span>
+                        <button class="guia-x" aria-label="Cerrar el asistente">${icono('x')}</button></div>
+                    <h3 id="guiaTitulo">${p.titulo}</h3>
+                    ${p.texto ? `<p class="guia-texto">${p.texto}</p>` : ''}
+                    ${p.lista ? `<ul class="guia-lista">${p.lista.map(([e, t]) => `<li><b>${e}:</b> ${t}</li>`).join('')}</ul>` : ''}
+                    ${p.nota ? `<div class="guia-nota">${p.nota}</div>` : ''}
+                    <div class="guia-avance">${pasos.map((_, k) => `<span class="${k <= i ? 'visto' : ''}"></span>`).join('')}</div>
+                    <div class="guia-botones">
+                        ${ultimo ? '<span></span>' : '<button class="guia-saltar">Saltar</button>'}
+                        <div style="display:flex;gap:8px">
+                            ${i > 0 ? '<button class="btn btn-contorno btn-sm guia-anterior">Anterior</button>' : ''}
+                            <button class="btn btn-primario btn-sm guia-siguiente">${ultimo ? 'Entendido' : 'Siguiente'}</button>
+                        </div>
+                    </div>
+                    <label class="guia-no-mostrar"><input type="checkbox" id="guiaNoMostrar"${marcado ? ' checked' : ''}>
+                        <span>No volver a mostrar el asistente. <span>Puedes reactivarlo desde el menú.</span></span></label>
+                </div>`;
+            tarjeta.querySelector('.guia-x').onclick = terminar;
+            const saltar = tarjeta.querySelector('.guia-saltar');
+            if (saltar) saltar.onclick = terminar;
+            const anterior = tarjeta.querySelector('.guia-anterior');
+            if (anterior) anterior.onclick = () => ir(i - 1);
+            tarjeta.querySelector('.guia-siguiente').onclick = siguiente;
+            tarjeta.style.visibility = 'hidden';
+            tarjeta.style.animation = 'none'; void tarjeta.offsetWidth; tarjeta.style.animation = '';
+
+            // En celular, los pasos del menú abren el cajón y esperan a que termine la animación.
+            const movil = esCelular();
+            if (movil && p.m && !menu.classList.contains('abierto')) { abrirMenu(); abrioMenu = true; }
+            else if (!p.m && abrioMenu) { cerrarMenu(); abrioMenu = false; }
+
+            clearTimeout(temporizador);
+            temporizador = setTimeout(() => {
+                const el = buscar(p.t);
+                if (el && !p.m) {
+                    const r = el.getBoundingClientRect();
+                    if (r.top < 72 || r.bottom > window.innerHeight - 24) el.scrollIntoView({ block: 'center' });
+                }
+                medir();
+                tarjeta.style.visibility = '';
+                tarjeta.querySelector('.guia-siguiente').focus({ preventScroll: true });
+            }, p.m && movil ? 260 : 40);
+        }
+
+        function medir() {
+            if (!capa) return;
+            const p = pasos[i], vw = window.innerWidth, vh = window.innerHeight;
+            const el = buscar(p.t), r = el && el.getBoundingClientRect();
+            const rect = r && r.width > 0 && r.height > 0 ? r : null;
+            const W = Math.min(360, vw - 32), H = tarjeta.offsetHeight;
+            const s = tarjeta.style;
+            s.top = s.left = s.bottom = s.transform = '';
+
+            fondo.style.display = rect ? 'none' : 'block';
+            aro.style.display = rect ? 'block' : 'none';
+            if (!rect) {
+                s.top = '50%'; s.left = '50%'; s.transform = 'translate(-50%, -50%)';
+                return;
+            }
+            Object.assign(aro.style, { top: rect.top - PAD + 'px', left: rect.left - PAD + 'px', width: rect.width + PAD * 2 + 'px', height: rect.height + PAD * 2 + 'px' });
+
+            // Escritorio: los pasos del menú lateral van a la derecha del menú.
+            if (p.m && !esCelular() && vw - (rect.right + PAD + GAP) >= W + 16) {
+                s.top = Math.max(16, Math.min(rect.top - PAD, vh - H - 16)) + 'px';
+                s.left = rect.right + PAD + GAP + 'px';
+                return;
+            }
+            // Debajo si cabe completa; si no, arriba; si no, a un lado (elementos altos en escritorio);
+            // si tampoco, pegada abajo. Centrada sobre el elemento.
+            const abajo = vh - (rect.bottom + PAD + GAP) - 16, arriba = rect.top - PAD - GAP - 16;
+            const derecha = vw - (rect.right + PAD + GAP) - 16, izquierda = rect.left - PAD - GAP - 16;
+            const centrada = Math.max(16, Math.min(rect.left + rect.width / 2 - W / 2, vw - W - 16)) + 'px';
+            const altura = Math.max(16, Math.min(rect.top - PAD, vh - H - 16)) + 'px';
+            if (abajo >= H) { s.top = rect.bottom + PAD + GAP + 'px'; s.left = centrada; }
+            else if (arriba >= H) { s.bottom = vh - (rect.top - PAD - GAP) + 'px'; s.left = centrada; }
+            else if (derecha >= W) { s.top = altura; s.left = rect.right + PAD + GAP + 'px'; }
+            else if (izquierda >= W) { s.top = altura; s.left = rect.left - PAD - GAP - W + 'px'; }
+            else { s.bottom = '16px'; s.left = centrada; }
+        }
+
+        return { iniciar, activa: () => !!capa };
+    })();
+
+    document.getElementById('btnVerGuia').addEventListener('click', () => { if (esCelular()) cerrarMenu(); setTimeout(Guia.iniciar, esCelular() ? 240 : 0); });
+    document.getElementById('btnAyuda').addEventListener('click', Guia.iniciar);
+    if (asistenteActivo()) window.addEventListener('load', () => setTimeout(Guia.iniciar, 300));
+</script>
+
+</body>
+</html>
